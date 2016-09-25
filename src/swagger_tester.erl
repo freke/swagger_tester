@@ -82,20 +82,28 @@ swagger_json(URL) ->
 
 expectations([],Resp) ->
 	Resp;
-expectations([{status, StatusCode}|R],{StatusCode, _RespHeaders, _Body}=Resp) ->
+expectations([{status, ExpectedStatusCode}|R],{StatusCode, _RespHeaders, _Body}=Resp) ->
+  assert_equal(ExpectedStatusCode, StatusCode, status),
 	expectations(R,Resp);
 expectations([{content_type, ContentType}|R], {_StatusCode, RespHeaders, _Body}=Resp) ->
-	ContentType = proplists:get_value(<<"content-type">>, RespHeaders),
+  assert_equal(ContentType, proplists:get_value(<<"content-type">>, RespHeaders), content_type),
 	expectations(R,Resp);
 expectations([{json, ExpectedJson}|R], {_StatusCode, _RespHeaders, Body}=Resp) ->
-	true = case jiffy:decode(Body,[return_maps]) of
-		Json when is_map(Json) -> maps:fold(fun(K, V, A) -> A andalso maps:get(K,Json) =:= V end, true, ExpectedJson);
-		[] -> [] =:= ExpectedJson
+	case jiffy:decode(Body,[return_maps]) of
+		Json when is_map(Json) ->
+      maps:fold(
+        fun(K, V, _) ->
+          assert_equal(V, maps:get(K,Json), json)
+        end,
+        ok,
+        ExpectedJson
+      );
+		[] -> assert_equal(ExpectedJson, [], json)
 	end,
 	expectations(R,Resp);
 expectations([{json_schema, Schema}|R], {_StatusCode, _RespHeaders, Body}=Resp) ->
 	Json = jiffy:decode(Body,[return_maps]),
-	{ok, Json} = jesse:validate_with_schema(Schema, Json),
+  assert_equal({ok, Json}, jesse:validate_with_schema(Schema, Json), json_schema),
 	expectations(R,Resp).
 
 expand_schema(#{<<"$ref">> := Def}, Swagger) ->
@@ -107,3 +115,16 @@ expand_schema(E,Swagger) when is_list(E) ->
 	lists:map(fun(V) -> expand_schema(V,Swagger) end, E);
 expand_schema(E,_Swagger) when is_binary(E)->
 	E.
+
+assert_equal(Expect, Actual, Context) ->
+  case (Actual) of
+    Expect -> ok;
+    _      -> fail(Expect, Actual, Context)
+  end.
+
+fail(Expect, Actual, Context) ->
+  erlang:throw({swagger_tester_expectati_failed, [
+    {context, Context},
+    {expected, Expect},
+    {actual, Actual}
+  ]}).

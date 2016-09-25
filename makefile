@@ -9,7 +9,7 @@ compile:
 	$(REBAR) compile
 
 test:
-	$(REBAR) do dialyzer , eunit , ct , cover
+	$(REBAR) do dialyzer, xref, eunit, ct, cover
 
 clean:
 	$(REBAR) clean --all
