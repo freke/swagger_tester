@@ -126,5 +126,6 @@ fail(Expect, Actual, Context) ->
   erlang:throw({swagger_tester_expectati_failed, [
     {context, Context},
     {expected, Expect},
-    {actual, Actual}
+    {actual, Actual},
+    {stacktrace, erlang:get_stacktrace()}
   ]}).
