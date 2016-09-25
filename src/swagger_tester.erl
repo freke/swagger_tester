@@ -76,7 +76,7 @@ request(Method, URL, Payload) ->
   {StatusCode, RespHeaders, Body}.
 
 swagger_json(URL) ->
-	{ok, 200, _, ClientRef} = hackney:get(URL, [], [], []),
+	{ok, _, _, ClientRef} = hackney:get(URL, [], [], []),
 	{ok, Body} = hackney:body(ClientRef),
 	Body.
 
