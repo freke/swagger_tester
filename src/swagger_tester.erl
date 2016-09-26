@@ -89,17 +89,7 @@ expectations([{content_type, ContentType}|R], {_StatusCode, RespHeaders, _Body}=
   assert_equal(ContentType, proplists:get_value(<<"content-type">>, RespHeaders), content_type),
 	expectations(R,Resp);
 expectations([{json, ExpectedJson}|R], {_StatusCode, _RespHeaders, Body}=Resp) ->
-	case jiffy:decode(Body,[return_maps]) of
-		Json when is_map(Json) ->
-      maps:fold(
-        fun(K, V, _) ->
-          assert_equal(V, maps:get(K,Json), json)
-        end,
-        ok,
-        ExpectedJson
-      );
-		[] -> assert_equal(ExpectedJson, [], json)
-	end,
+	validate_responce(jiffy:decode(Body,[return_maps]),ExpectedJson),
 	expectations(R,Resp);
 expectations([{json_schema, Schema}|R], {_StatusCode, _RespHeaders, Body}=Resp) ->
 	Json = jiffy:decode(Body,[return_maps]),
@@ -123,9 +113,25 @@ assert_equal(Expect, Actual, Context) ->
   end.
 
 fail(Expect, Actual, Context) ->
-  erlang:throw({swagger_tester_expectati_failed, [
+  erlang:throw({swagger_tester_expectation_failed, [
     {context, Context},
     {expected, Expect},
     {actual, Actual},
     {stacktrace, erlang:get_stacktrace()}
   ]}).
+
+validate_responce(Resp, Expected)
+  case  of
+    Json when is_map(Json) ->
+      maps:fold(
+        fun(K, V, _) ->
+          assert_equal(V, maps:get(K,Json), json)
+        end,
+        ok,
+        ExpectedJson
+      );
+    [R] ->
+       [E] = Expected,
+       validate_responce(R,E);
+    [] -> assert_equal(ExpectedJson, [], json)
+  end,
