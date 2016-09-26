@@ -120,18 +120,18 @@ fail(Expect, Actual, Context) ->
     {stacktrace, erlang:get_stacktrace()}
   ]}).
 
-validate_responce(Resp, Expected)
-  case  of
-    Json when is_map(Json) ->
+validate_responce(Resp, Expected) ->
+  case Resp of
+    Map when is_map(Map) ->
       maps:fold(
         fun(K, V, _) ->
-          assert_equal(V, maps:get(K,Json), json)
+          assert_equal(V, maps:get(K,Map), json)
         end,
         ok,
-        ExpectedJson
+        Expected
       );
     [R] ->
        [E] = Expected,
        validate_responce(R,E);
-    [] -> assert_equal(ExpectedJson, [], json)
-  end,
+    [] -> assert_equal(Expected, [], json)
+  end.
