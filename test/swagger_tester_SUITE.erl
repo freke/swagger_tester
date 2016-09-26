@@ -41,7 +41,7 @@ cleanup() ->
 %%%===================================================================
 echo_handler_tests(_Config) ->
 	{ok, Port} = application:get_env(example, http_port),
-  URL = [<<"http://localhost:">>,integer_to_binary(Port)],
+  URL = [<<"http://localhost">>,<<":">>,integer_to_binary(Port)],
 	ct:comment("test GET /message should return 200 OK"),
 	Swagger = {url, [URL,<<"/api-docs/swagger.json">>]},
   swagger_tester:get([URL,<<"/message">>],
